@@ -1,21 +1,35 @@
 package main
 
 import (
-	"base/controller"
-	"base/model"
-	"log"
+	"fmt"
 	"net/http"
-	"github.com/gorilla/mux"
+	"os"
+	"base/controller"
+	_ "github.com/mattn/go-sqlite3"
 )
 
-func main() {
-	r := mux.NewRouter()
-	r.HandleFunc("/register", controller.RegisterHandler).
-		Methods("POST")
-	r.HandleFunc("/login", controller.LoginHandler).
-		Methods("POST")
-	r.HandleFunc("/profile", controller.ProfileHandler).
-		Methods("GET")
+func handler(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+}
 
-	log.Fatal(http.ListenAndServe(":10000", r))
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+}
+
+func GetPort() string {
+	var port = os.Getenv("PORT")
+	if port == "" {
+		port = "4747"
+		fmt.Println("INFO: No PORT environment variable detected, defaulting to " + port)
+	}
+	return ":" + port
+}
+
+func main() {
+	//	route
+	http.HandleFunc("/getAllTutorials", controller.GetAllTutorials)
+	http.HandleFunc("/addTutorial", controller.AddTutorial)
+	http.HandleFunc("/updateTutorial", controller.UpdateTutorial)
+	http.HandleFunc("/deleteTutorial", controller.DeleteTutorial)
+	http.ListenAndServe(GetPort(), nil)
 }
