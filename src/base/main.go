@@ -6,15 +6,8 @@ import (
 	"os"
 	"base/controller"
 	_ "github.com/mattn/go-sqlite3"
+	 "github.com/rs/cors"
 )
-
-func handler(w http.ResponseWriter, r *http.Request) {
-	enableCors(&w)
-}
-
-func enableCors(w *http.ResponseWriter) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-}
 
 func GetPort() string {
 	var port = os.Getenv("PORT")
@@ -27,9 +20,11 @@ func GetPort() string {
 
 func main() {
 	//	route
-	http.HandleFunc("/getAllTutorials", controller.GetAllTutorials)
-	http.HandleFunc("/addTutorial", controller.AddTutorial)
-	http.HandleFunc("/updateTutorial", controller.UpdateTutorial)
-	http.HandleFunc("/deleteTutorial", controller.DeleteTutorial)
-	http.ListenAndServe(GetPort(), nil)
+	 mux := http.NewServeMux()
+	 handler := cors.Default().Handler(mux)
+	mux.HandleFunc("/getAllTutorials", controller.GetAllTutorials)
+	mux.HandleFunc("/addTutorial", controller.AddTutorial)
+	mux.HandleFunc("/updateTutorial", controller.UpdateTutorial)
+	mux.HandleFunc("/deleteTutorial", controller.DeleteTutorial)
+	http.ListenAndServe(GetPort(), handler)
 }

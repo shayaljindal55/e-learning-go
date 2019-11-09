@@ -18,6 +18,11 @@ type Tutorials struct {
 	Id          int    `json:"id"`
 	Info        string `json:"info"`
 	Description string `json:"description"`
+	Url         string `json:"url"`
+}
+
+func Message(status bool, message string) map[string]interface{} {
+	return map[string]interface{}{"status": status, "message": message}
 }
 
 func GetAllTutorials(w http.ResponseWriter, r *http.Request) {
@@ -28,19 +33,21 @@ func GetAllTutorials(w http.ResponseWriter, r *http.Request) {
 		database, _ :=
 			sql.Open("sqlite3", "./bogo.db")
 		rows, err :=
-			database.Query("SELECT id, info, description FROM tutorials")
+			database.Query("SELECT id, info, description, url FROM tutorials")
 		if err != nil {
 			fmt.Println("Prepare select all query error")
 			panic(err)
 		}
 		var tutorials []Tutorials
-		var tutorial Tutorials
+		var t Tutorials
 		for rows.Next() {
-			rows.Scan(&tutorial.Id, &tutorial.Info,
-				&tutorial.Description)
-			tutorials = append(tutorials, tutorial)
+			rows.Scan(&t.Id, &t.Info,
+				&t.Description, &t.Url)
+			tutorials = append(tutorials, t)
 		}
-		json.NewEncoder(w).Encode(tutorials)
+		resp := Message(true, "success")
+		resp["tutorials"] = tutorials
+		json.NewEncoder(w).Encode(resp)
 	}
 }
 
@@ -62,13 +69,14 @@ func AddTutorial(w http.ResponseWriter, r *http.Request) {
 		// Insert into database
 		database, _ :=
 			sql.Open("sqlite3", "./bogo.db")
+
 		statement, err :=
-			database.Prepare("INSERT INTO tutorials (info, description) VALUES (?, ?)")
+			database.Prepare("INSERT INTO tutorials (info, description, url) VALUES (?, ?, ?)")
 		if err != nil {
 			fmt.Println("Prepare insert query error")
 			panic(err)
 		}
-		_, err = statement.Exec(t.Info, t.Description)
+		_, err = statement.Exec(t.Info, t.Description, t.Url)
 		if err != nil {
 			fmt.Println("Execute insert query error")
 			panic(err)
@@ -90,20 +98,20 @@ func UpdateTutorial(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println(t)
+		fmt.Println(t.Url)
 
 		// Update record in database
 		database, err :=
 			sql.Open("sqlite3", "./bogo.db")
 		statement, err := database.Prepare(`
-	UPDATE tutorials SET info=?, description=?
+	UPDATE tutorials SET info=?, description=?, url=?
 	WHERE id=?
 `)
 		if err != nil {
 			fmt.Println("Prepare update query error")
 			panic(err)
 		}
-		_, err = statement.Exec(t.Info, t.Description, t.Id)
+		_, err = statement.Exec(t.Info, t.Description, t.Url, t.Id)
 		if err != nil {
 			fmt.Println("Execute update query error")
 			panic(err)
