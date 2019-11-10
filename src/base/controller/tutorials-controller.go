@@ -32,21 +32,58 @@ func GetAllTutorials(w http.ResponseWriter, r *http.Request) {
 	} else {
 		database, _ :=
 			sql.Open("sqlite3", "./bogo.db")
-		rows, err :=
-			database.Query("SELECT id, info, description, url FROM tutorials")
-		if err != nil {
-			fmt.Println("Prepare select all query error")
-			panic(err)
-		}
+		// rows, err :=
+		// 	database.Query("SELECT id, info, description, url FROM tutorials")
+
+		keys, ok := r.URL.Query()["searchInput"]
+
 		var tutorials []Tutorials
 		var t Tutorials
-		for rows.Next() {
-			rows.Scan(&t.Id, &t.Info,
-				&t.Description, &t.Url)
-			tutorials = append(tutorials, t)
-		}
 		resp := Message(true, "success")
-		resp["tutorials"] = tutorials
+
+		if !ok || len(keys[0]) < 1 {
+			rows, err :=
+				database.Query("SELECT id, info, description, url FROM tutorials")
+			if err != nil {
+				fmt.Println("Prepare select all query error")
+				panic(err)
+			}
+			for rows.Next() {
+				rows.Scan(&t.Id, &t.Info,
+					&t.Description, &t.Url)
+				tutorials = append(tutorials, t)
+			}
+			resp["tutorials"] = tutorials
+		} else {
+			// rows, err :=
+			// database.Query("SELECT id, info, description, url FROM tutorials where info like '%d%' or description like '%d%'",
+			// keys[0],keys[0])
+			// fmt.Println("SELECT id, info, description, url FROM tutorials where info like '%d%' or description like '%d%'",
+			// keys[0],keys[0])
+			// if err != nil {
+			// 	fmt.Println("Prepare select all query error")
+			// 	panic(err)
+			// }
+			// for rows.Next() {
+			// 	rows.Scan(&t.Id, &t.Info,
+			// 		&t.Description, &t.Url)
+			// 	tutorials = append(tutorials, t)
+			// }
+			// resp["tutorials"] = tutorials
+
+			rows, err := database.Query("SELECT id, info, description, url FROM tutorials where info like ?", "%" + keys[0] + "%")
+			if err != nil {
+				fmt.Println("Prepare select all query error")
+				panic(err)
+			}
+			for rows.Next() {
+				rows.Scan(&t.Id, &t.Info,
+					&t.Description, &t.Url)
+				tutorials = append(tutorials, t)
+			}
+			resp["tutorials"] = tutorials
+	
+		}
 		json.NewEncoder(w).Encode(resp)
 	}
 }
